@@ -10,7 +10,6 @@
 #import "MWZoomingScrollView.h"
 #import "MWPhotoBrowser.h"
 #import "MWPhoto.h"
-#import "DACircularProgressView.h"
 #import "MWPhotoBrowserPrivate.h"
 
 // Private methods and properties
@@ -19,7 +18,7 @@
     MWPhotoBrowser __weak *_photoBrowser;
 	MWTapDetectingView *_tapView; // for background taps
 	MWTapDetectingImageView *_photoImageView;
-	DACircularProgressView *_loadingIndicator;
+	UIActivityIndicatorView *_loadingIndicator;
     UIImageView *_loadingError;
     
 }
@@ -50,19 +49,12 @@
 		[self addSubview:_photoImageView];
 		
 		// Loading indicator
-		_loadingIndicator = [[DACircularProgressView alloc] initWithFrame:CGRectMake(140.0f, 30.0f, 40.0f, 40.0f)];
+		_loadingIndicator = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
         _loadingIndicator.userInteractionEnabled = NO;
-        if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"7")) {
-            _loadingIndicator.thicknessRatio = 0.1;
-            _loadingIndicator.roundedCorners = NO;
-        } else {
-            _loadingIndicator.thicknessRatio = 0.2;
-            _loadingIndicator.roundedCorners = YES;
-        }
 		_loadingIndicator.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleTopMargin |
         UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleRightMargin;
 		[self addSubview:_loadingIndicator];
-
+        
         // Listen progress notifications
         [[NSNotificationCenter defaultCenter] addObserver:self
                                                  selector:@selector(setProgressFromNotification:)
@@ -140,7 +132,7 @@
 			photoImageViewFrame.size = img.size;
 			_photoImageView.frame = photoImageViewFrame;
 			self.contentSize = photoImageViewFrame.size;
-
+            
 			// Set zoom to minimum zoom
 			[self setMaxMinZoomScalesForCurrentBounds];
 			
@@ -183,24 +175,24 @@
 #pragma mark - Loading Progress
 
 - (void)setProgressFromNotification:(NSNotification *)notification {
-    NSDictionary *dict = [notification object];
-    id <MWPhoto> photoWithProgress = [dict objectForKey:@"photo"];
-    if (photoWithProgress == self.photo) {
-        float progress = [[dict valueForKey:@"progress"] floatValue];
-        _loadingIndicator.progress = MAX(MIN(1, progress), 0);
-    }
+    //    NSDictionary *dict = [notification object];
+    //    id <MWPhoto> photoWithProgress = [dict objectForKey:@"photo"];
+    //    if (photoWithProgress == self.photo) {
+    //        float progress = [[dict valueForKey:@"progress"] floatValue];
+    //        _loadingIndicator.progress = MAX(MIN(1, progress), 0);
+    //    }
 }
 
 - (void)hideLoadingIndicator {
-    _loadingIndicator.hidden = YES;
+    [_loadingIndicator stopAnimating];
 }
 
 - (void)showLoadingIndicator {
     self.zoomScale = 0;
     self.minimumZoomScale = 0;
     self.maximumZoomScale = 0;
-    _loadingIndicator.progress = 0;
     _loadingIndicator.hidden = NO;
+    [_loadingIndicator startAnimating];
     [self hideImageFailure];
 }
 
@@ -247,7 +239,7 @@
     CGFloat xScale = boundsSize.width / imageSize.width;    // the scale needed to perfectly fit the image width-wise
     CGFloat yScale = boundsSize.height / imageSize.height;  // the scale needed to perfectly fit the image height-wise
     CGFloat minScale = MIN(xScale, yScale);                 // use minimum of these to allow the image to become fully visible
-
+    
     // Calculate Max
 	CGFloat maxScale = 3;
     if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
@@ -278,7 +270,7 @@
     
     // Layout
 	[self setNeedsLayout];
-
+    
 }
 
 #pragma mark - Layout
@@ -291,15 +283,15 @@
 	// Position indicators (centre does not seem to work!)
 	if (!_loadingIndicator.hidden)
         _loadingIndicator.frame = CGRectMake(floorf((self.bounds.size.width - _loadingIndicator.frame.size.width) / 2.),
-                                         floorf((self.bounds.size.height - _loadingIndicator.frame.size.height) / 2),
-                                         _loadingIndicator.frame.size.width,
-                                         _loadingIndicator.frame.size.height);
+                                             floorf((self.bounds.size.height - _loadingIndicator.frame.size.height) / 2),
+                                             _loadingIndicator.frame.size.width,
+                                             _loadingIndicator.frame.size.height);
 	if (_loadingError)
         _loadingError.frame = CGRectMake(floorf((self.bounds.size.width - _loadingError.frame.size.width) / 2.),
                                          floorf((self.bounds.size.height - _loadingError.frame.size.height) / 2),
                                          _loadingError.frame.size.width,
                                          _loadingError.frame.size.height);
-
+    
 	// Super
 	[super layoutSubviews];
 	
@@ -370,7 +362,7 @@
         CGFloat xsize = self.bounds.size.width / newZoomScale;
         CGFloat ysize = self.bounds.size.height / newZoomScale;
         [self zoomToRect:CGRectMake(touchPoint.x - xsize/2, touchPoint.y - ysize/2, xsize, ysize) animated:YES];
-
+        
 	}
 	
 	// Delay controls
@@ -379,7 +371,7 @@
 }
 
 // Image View
-- (void)imageView:(UIImageView *)imageView singleTapDetected:(UITouch *)touch { 
+- (void)imageView:(UIImageView *)imageView singleTapDetected:(UITouch *)touch {
     [self handleSingleTap:[touch locationInView:imageView]];
 }
 - (void)imageView:(UIImageView *)imageView doubleTapDetected:(UITouch *)touch {

@@ -9,13 +9,12 @@
 #import "MWGridCell.h"
 #import "MWCommon.h"
 #import "MWPhotoBrowserPrivate.h"
-#import "DACircularProgressView.h"
 
 @interface MWGridCell () {
     
     UIImageView *_imageView;
     UIImageView *_loadingError;
-	DACircularProgressView *_loadingIndicator;
+	UIActivityIndicatorView *_loadingIndicator;
     UIButton *_selectedButton;
     
 }
@@ -49,17 +48,12 @@
         _selectedButton.hidden = YES;
         _selectedButton.frame = CGRectMake(0, 0, 44, 44);
         [self addSubview:_selectedButton];
-    
+        
 		// Loading indicator
-		_loadingIndicator = [[DACircularProgressView alloc] initWithFrame:CGRectMake(0, 0, 40.0f, 40.0f)];
+		_loadingIndicator = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
         _loadingIndicator.userInteractionEnabled = NO;
-        if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"7")) {
-            _loadingIndicator.thicknessRatio = 0.1;
-            _loadingIndicator.roundedCorners = NO;
-        } else {
-            _loadingIndicator.thicknessRatio = 0.2;
-            _loadingIndicator.roundedCorners = YES;
-        }
+        _loadingIndicator.hidden = YES;
+        
 		[self addSubview:_loadingIndicator];
         
         // Listen for photo loading notifications
@@ -99,7 +93,7 @@
     _photo = nil;
     _gridController = nil;
     _imageView.image = nil;
-    _loadingIndicator.progress = 0;
+    _loadingIndicator.hidden = YES;
     _selectedButton.hidden = YES;
     [self hideImageFailure];
     [super prepareForReuse];
@@ -162,11 +156,11 @@
 #pragma mark Indicators
 
 - (void)hideLoadingIndicator {
-    _loadingIndicator.hidden = YES;
+    [_loadingIndicator stopAnimating];
 }
 
 - (void)showLoadingIndicator {
-    _loadingIndicator.progress = 0;
+    [_loadingIndicator startAnimating];
     _loadingIndicator.hidden = NO;
     [self hideImageFailure];
 }
@@ -201,8 +195,8 @@
     id <MWPhoto> photoWithProgress = [dict objectForKey:@"photo"];
     if (photoWithProgress == _photo) {
         //        NSLog(@"%f", [[dict valueForKey:@"progress"] floatValue]);
-        float progress = [[dict valueForKey:@"progress"] floatValue];
-        _loadingIndicator.progress = MAX(MIN(1, progress), 0);
+        //float progress = [[dict valueForKey:@"progress"] floatValue];
+        //_loadingIndicator.progress = MAX(MIN(1, progress), 0);
     }
 }
 
